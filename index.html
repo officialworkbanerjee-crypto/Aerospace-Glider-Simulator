@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aerospace Glider Dynamics Simulator | Portfolio Project</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #0d1117; 
+            color: #c9d1d9; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+        }
+        #ui-container { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 350px; 
+            height: 100%; 
+            background: rgba(22, 27, 34, 0.85); 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(48, 54, 61, 0.5); 
+            padding: 30px 25px; 
+            box-sizing: border-box; 
+            display: flex; 
+            flex-direction: column; 
+            z-index: 10;
+            box-shadow: 5px 0 25px rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        
+        /* Disable selection and copy */
+        body, #ui-container {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        h1 { 
+            font-size: 1.3rem; 
+            color: #58a6ff; 
+            margin-top: 0; 
+            margin-bottom: 5px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+        .author-badge {
+            display: inline-block;
+            background: rgba(35, 134, 54, 0.1);
+            color: #3fb950;
+            border: 1px solid rgba(63, 185, 80, 0.4);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+        .control-group { 
+            margin-bottom: 20px; 
+        }
+        label { 
+            display: flex; 
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px; 
+            font-weight: 500; 
+            font-size: 0.9rem; 
+            color: #e6edf3;
+        }
+        input[type="range"] { 
+            width: 100%; 
+            cursor: pointer; 
+            accent-color: #58a6ff;
+            background: #21262d;
+            height: 4px;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #58a6ff;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        .value-display { 
+            background: #161b22;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #30363d;
+            color: #7ee787; 
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.8rem;
+        }
+        .telemetry { 
+            margin-top: auto; 
+            background: rgba(1, 4, 9, 0.6); 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid #30363d; 
+        }
+        .telemetry-title {
+            color: #8b949e;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .telemetry-title::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #3fb950;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #3fb950;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+        .telemetry p { 
+            margin: 10px 0; 
+            font-size: 0.85rem; 
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            display: flex; 
+            justify-content: space-between; 
+            color: #8b949e;
+        }
+        .val-positive { color: #58a6ff; }
+        .val-negative { color: #ff7b72; }
+        .val-neutral { color: #c9d1d9; }
+        
+        #canvas-container { 
+            position: absolute; 
+            top: 0; 
+            left: 350px; 
+            width: calc(100% - 350px); 
+            height: 100%; 
+        }
+        
+        .btn-reset { 
+            background: transparent; 
+            color: #8b949e; 
+            border: 1px solid #30363d; 
+            padding: 10px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .btn-reset:hover { 
+            background: #21262d; 
+            color: #c9d1d9;
+            border-color: #8b949e;
+        }
+
+        /* Overlay to prevent right-click inspect element easily */
+        #protection-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        
+        /* Watermark */
+        .watermark {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.1);
+            font-size: 2rem;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 5;
+            user-select: none;
+        }
+    </style>
+    <!-- Use minified Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body oncontextmenu="return false;" onkeydown="return disableKeys(event);">
+<!-- Obfuscation: Prevent right click and common dev tool shortcuts -->
+<script>
+    function disableKeys(e) {
+        // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+        if (e.keyCode == 123) return false;
+        if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) return false;
+        if (e.ctrlKey && e.keyCode == 85) return false;
+    }
+    // Minimal anti-debugging trick
+    setInterval(function() {
+        var start = performance.now();
+        debugger;
+        var end = performance.now();
+        if (end - start > 100) {
+            document.body.innerHTML = "Debugging is not allowed for portfolio projects.";
+        }
+    }, 1000);
+</script>
+
+<div id="protection-overlay"></div>
+<div class="watermark">Subham Banerjee | Portfolio</div>
+
+<div id="ui-container">
+    <h1>Flight Dynamics Engine</h1>
+    <div class="subtitle">Aerospace Simulation</div>
+    
+    <div class="author-badge">
+        Developed by Subham Banerjee
+    </div>
+
+    <div class="control-group">
+        <label>
+            Ailerons (Roll) 
+            <span id="val-aileron" class="value-display">0.00</span>
+        </label>
+        <input type="range" id="slider-aileron" min="-1" max="1" step="0.01" value="0">
+    </div>
+
+    <div class="control-group">
+        <label>
+            Elevator (Pitch) 
+            <span id="val-elevator" class="value-display">0.00</span>
+        </label>
+        <input type="range" id="slider-elevator" min="-1" max="1" step="0.01" value="0">
+    </div>
+
+    <div class="control-group">
+        <label>
+            Rudder (Yaw) 
+            <span id="val-rudder" class="value-display">0.00</span>
+        </label>
+        <input type="range" id="slider-rudder" min="-1" max="1" step="0.01" value="0">
+    </div>
+
+    <button class="btn-reset" onclick="resetControls()">Reset Telemetry</button>
+
+    <div class="telemetry">
+        <div class="telemetry-title">Live Physics Telemetry</div>
+        <p>Roll:  <span id="tel-roll" class="val-neutral">0.0°</span></p>
+        <p>Pitch: <span id="tel-pitch" class="val-neutral">0.0°</span></p>
+        <p>Yaw:   <span id="tel-yaw" class="val-neutral">0.0°</span></p>
+        <p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #21262d;">AoA: <span id="tel-aoa" class="val-neutral">0.0°</span></p>
+    </div>
+</div>
+
+<div id="canvas-container"></div>
+
+<script>
+    // Self-invoking anonymous function to encapsulate scope and prevent global variable access
+    (function() {
+        window.addEventListener('load', function() {
+            const _0x1a = document.getElementById('slider-aileron');
+            const _0x1b = document.getElementById('slider-elevator');
+            const _0x1c = document.getElementById('slider-rudder');
+            
+            const _0x2a = document.getElementById('val-aileron');
+            const _0x2b = document.getElementById('val-elevator');
+            const _0x2c = document.getElementById('val-rudder');
+            
+            const _0x3a = document.getElementById('tel-roll');
+            const _0x3b = document.getElementById('tel-pitch');
+            const _0x3c = document.getElementById('tel-yaw');
+            const _0x3d = document.getElementById('tel-aoa');
+            
+            let _p = 0, _r = 0, _y = 0;
+            let _pv = 0, _rv = 0, _yv = 0;
+            
+            if (typeof THREE === 'undefined') return;
+
+            const _c = document.getElementById('canvas-container');
+            const _w = window.innerWidth - 350;
+            const _h = window.innerHeight;
+
+            const _scn = new THREE.Scene();
+            _scn.background = new THREE.Color(0x0a0c10);
+            _scn.fog = new THREE.FogExp2(0x0a0c10, 0.02);
+            
+            const _cam = new THREE.PerspectiveCamera(40, _w / _h, 0.1, 1000);
+            _cam.position.set(-18, 12, -22);
+            
+            const _ren = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            _ren.setSize(_w, _h);
+            _ren.shadowMap.enabled = true;
+            _ren.shadowMap.type = THREE.PCFSoftShadowMap;
+            _c.appendChild(_ren.domElement);
+            
+            const _al = new THREE.AmbientLight(0xffffff, 0.5);
+            _scn.add(_al);
+            const _dl = new THREE.DirectionalLight(0x58a6ff, 0.8);
+            _dl.position.set(15, 25, 15);
+            _dl.castShadow = true;
+            _dl.shadow.mapSize.width = 2048;
+            _dl.shadow.mapSize.height = 2048;
+            _scn.add(_dl);
+            
+            const _dl2 = new THREE.DirectionalLight(0xff7b72, 0.3);
+            _dl2.position.set(-15, -5, -15);
+            _scn.add(_dl2);
+
+            // Tech grid
+            const _gh = new THREE.GridHelper(200, 100, 0x1f6feb, 0x21262d);
+            _gh.position.y = -10;
+            _gh.material.opacity = 0.3;
+            _gh.material.transparent = true;
+            _scn.add(_gh);
+
+            const _grp = new THREE.Group();
+            
+            // Sleeker Materials for Portfolio
+            const _mB = new THREE.MeshStandardMaterial({ color: 0xe6edf3, roughness: 0.2, metalness: 0.1 });
+            const _mW = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.2 });
+            const _mC = new THREE.MeshStandardMaterial({ color: 0x58a6ff, roughness: 0.4, metalness: 0.5 });
+            const _mK = new THREE.MeshPhysicalMaterial({ color: 0x010409, metalness: 0.9, roughness: 0.1, envMapIntensity: 1.0, clearcoat: 1.0, clearcoatRoughness: 0.1 });
+
+            // Fuselage
+            const _gF = new THREE.CylinderGeometry(0.4, 0.1, 10, 32);
+            _gF.rotateX(Math.PI / 2);
+            const _fus = new THREE.Mesh(_gF, _mB);
+            _fus.castShadow = true;
+            _grp.add(_fus);
+
+            // Canopy
+            const _gC = new THREE.SphereGeometry(0.45, 32, 16);
+            _gC.scale(0.8, 2.2, 0.9);
+            const _can = new THREE.Mesh(_gC, _mK);
+            _can.position.set(0, 0.25, 2.5);
+            _can.rotation.x = Math.PI / 2;
+            _grp.add(_can);
+
+            // Wing
+            const _ws = 18, _wc = 1.2;
+            const _gW = new THREE.BoxGeometry(_ws, 0.08, _wc);
+            const _wng = new THREE.Mesh(_gW, _mW);
+            _wng.position.set(0, 0.15, 1);
+            _wng.castShadow = true;
+            _grp.add(_wng);
+
+            // Ailerons
+            const _as = 4, _ac = 0.3;
+            const _gA = new THREE.BoxGeometry(_as, 0.04, _ac);
+            
+            const _lAP = new THREE.Group();
+            _lAP.position.set(-_ws/2 + _as/2 + 0.5, 0.15, 1 + _wc/2);
+            const _lA = new THREE.Mesh(_gA, _mC);
+            _lA.position.set(0, 0, _ac/2);
+            _lAP.add(_lA);
+            _grp.add(_lAP);
+
+            const _rAP = new THREE.Group();
+            _rAP.position.set(_ws/2 - _as/2 - 0.5, 0.15, 1 + _wc/2);
+            const _rA = new THREE.Mesh(_gA, _mC);
+            _rA.position.set(0, 0, _ac/2);
+            _rAP.add(_rA);
+            _grp.add(_rAP);
+
+            // Tail
+            const _tz = -4.5;
+            const _hs = 4, _hc = 0.8;
+            const _gH = new THREE.BoxGeometry(_hs, 0.08, _hc);
+            const _hS = new THREE.Mesh(_gH, _mW);
+            _hS.position.set(0, 0.8, _tz);
+            _grp.add(_hS);
+
+            // Elevator
+            const _eP = new THREE.Group();
+            _eP.position.set(0, 0.8, _tz + _hc/2);
+            const _gE = new THREE.BoxGeometry(_hs, 0.04, 0.4);
+            const _ele = new THREE.Mesh(_gE, _mC);
+            _ele.position.set(0, 0, 0.2);
+            _eP.add(_ele);
+            _grp.add(_eP);
+
+            // V-Stab
+            const _vh = 1.5, _vc = 1.0;
+            const _gV = new THREE.BoxGeometry(0.08, _vh, _vc);
+            const _vS = new THREE.Mesh(_gV, _mW);
+            _vS.position.set(0, 0.4 + _vh/2, _tz + 0.2);
+            _grp.add(_vS);
+
+            // Rudder
+            const _rP = new THREE.Group();
+            _rP.position.set(0, 0.4 + _vh/2, _tz + 0.2 + _vc/2);
+            const _gR = new THREE.BoxGeometry(0.04, _vh, 0.4);
+            const _rud = new THREE.Mesh(_gR, _mC);
+            _rud.position.set(0, 0, 0.2);
+            _rP.add(_rud);
+            _grp.add(_rP);
+
+            _scn.add(_grp);
+            _cam.lookAt(_grp.position);
+
+            window.addEventListener('resize', () => {
+                const nw = window.innerWidth - 350;
+                const nh = window.innerHeight;
+                _cam.aspect = nw / nh;
+                _cam.updateProjectionMatrix();
+                _ren.setSize(nw, nh);
+            });
+
+            window.resetControls = function() {
+                _0x1a.value = 0; _0x1b.value = 0; _0x1c.value = 0;
+                _p = 0; _r = 0; _y = 0;
+                _pv = 0; _rv = 0; _yv = 0;
+                _grp.rotation.set(0, 0, 0, 'YXZ');
+                _lAP.rotation.x = 0; _rAP.rotation.x = 0;
+                _eP.rotation.x = 0; _rP.rotation.y = 0;
+            };
+
+            function _uC(el, val) {
+                el.className = '';
+                if (val > 0.5) el.classList.add('val-positive');
+                else if (val < -0.5) el.classList.add('val-negative');
+                else el.classList.add('val-neutral');
+            }
+
+            function _anim() {
+                requestAnimationFrame(_anim);
+
+                const iA = parseFloat(_0x1a.value) || 0;
+                const iE = parseFloat(_0x1b.value) || 0;
+                const iR = parseFloat(_0x1c.value) || 0;
+
+                _0x2a.textContent = iA.toFixed(2);
+                _0x2b.textContent = iE.toFixed(2);
+                _0x2c.textContent = iR.toFixed(2);
+
+                const mD = 0.5; 
+                _lAP.rotation.x = -iA * mD;
+                _rAP.rotation.x = iA * mD;
+                _eP.rotation.x = iE * mD;
+                _rP.rotation.y = -iR * mD;
+
+                _rv += (iA * 0.0015);
+                _pv += (-iE * 0.001); 
+                _yv += (-iR * 0.0008) + (iA * 0.0003); 
+
+                _rv *= 0.96; _pv *= 0.96; _yv *= 0.96;
+                _r -= _r * 0.005; _p -= _p * 0.005;
+
+                _r += _rv; _p += _pv; _y += _yv;
+                _grp.rotation.set(_p, _y, _r, 'YXZ');
+
+                _gh.position.z += 0.2;
+                if (_gh.position.z > 10) _gh.position.z = 0;
+
+                const rd = THREE.MathUtils.radToDeg(_r);
+                const pd = THREE.MathUtils.radToDeg(_p);
+                const yd = THREE.MathUtils.radToDeg(_y);
+                
+                _0x3a.textContent = rd.toFixed(1) + '°';
+                _0x3b.textContent = pd.toFixed(1) + '°';
+                _0x3c.textContent = yd.toFixed(1) + '°';
+                
+                const aoa = (pd + (iE * 5)).toFixed(1);
+                _0x3d.textContent = aoa + '°';
+
+                _uC(_0x3a, rd); _uC(_0x3b, pd); _uC(_0x3c, yd);
+
+                _ren.render(_scn, _cam);
+            }
+            _anim();
+        });
+    })();
+</script>
+</body>
+</html>
